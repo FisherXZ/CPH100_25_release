@@ -6,6 +6,7 @@ from csv import DictWriter
 import multiprocessing
 import itertools
 import sys
+from typing import List
 
 def add_main_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
@@ -37,7 +38,7 @@ def add_main_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     return parser
 
-def get_experiment_list(config: dict) -> list[dict]:
+def get_experiment_list(config: dict) -> List[dict]:
     '''
     Parses an experiment config, and creates jobs. For flags that are expected to be a single item, 
     but the config contains a list, this will return one job for each item in the list.
@@ -61,11 +62,17 @@ def get_experiment_list(config: dict) -> list[dict]:
             ...
         ]
     '''
-    jobs = [{}]
-
-    # TODO: Go through the tree of possible jobs and enumerate into a list of jobs
-    raise NotImplementedError("Not implemented yet")
-
+    # Get all parameter names and their possible values
+    param_names = list(config.keys())
+    param_values = [config[param] for param in param_names]
+    
+    # Generate all combinations using itertools.product
+    jobs = []
+    for combination in itertools.product(*param_values):
+        # Create a job dict by pairing parameter names with values
+        job = dict(zip(param_names, combination))
+        jobs.append(job)
+    
     return jobs
 
 def worker(args: argparse.Namespace, job_queue: multiprocessing.Queue, done_queue: multiprocessing.Queue):
@@ -106,14 +113,44 @@ def launch_experiment(args: argparse.Namespace, experiment_config: dict) -> dict
     if not os.path.isdir(args.log_dir):
         os.makedirs(args.log_dir)
 
-    # TODO: Launch the experiment
-
-    # TODO: Parse the results from the experiment and return them as a dict
-
-    raise NotImplementedError("Not implemented yet")
-
-    results = {}
-    return results
+    # Create unique filename for this experiment
+    experiment_id = "_".join([f"{k}_{v}" for k, v in experiment_config.items()])
+    log_file = os.path.join(args.log_dir, f"experiment_{experiment_id}.log")
+    results_file = os.path.join(args.log_dir, f"results_{experiment_id}.json")
+    
+    # Build command to run main.py with these parameters
+    cmd = [
+        sys.executable, "main.py",
+        "--results_path", results_file
+    ]
+    
+    # Add each parameter from experiment_config to command
+    for param_name, param_value in experiment_config.items():
+        cmd.extend([f"--{param_name}", str(param_value)])
+    
+    # Run the experiment and capture output
+    try:
+        with open(log_file, 'w') as f:
+            result = subprocess.run(cmd, stdout=f, stderr=f, cwd=os.path.dirname(__file__))
+        
+        if result.returncode != 0:
+            print(f"Experiment failed: {experiment_config}")
+            return {"error": "experiment_failed", **experiment_config}
+        
+        # Load results from the output file
+        if os.path.exists(results_file):
+            with open(results_file, 'r') as f:
+                results = json.load(f)
+        else:
+            results = {"error": "no_results_file"}
+        
+        # Combine experiment parameters with results
+        final_results = {**experiment_config, **results}
+        return final_results
+        
+    except Exception as e:
+        print(f"Error running experiment {experiment_config}: {e}")
+        return {"error": str(e), **experiment_config}
 
 
 def parse_args() -> argparse.Namespace:
@@ -122,7 +159,7 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     return args
 
-def main(args: argparse.Namespace) -> list[dict]:
+def main(args: argparse.Namespace) -> List[dict]:
     print(args)
     config = json.load(open(args.config_path, "r"))
     print("Starting grid search with the following config:")

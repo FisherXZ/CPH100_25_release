@@ -1,0 +1,78 @@
+ABLATION STUDY ANALYSIS REPORT
+==================================================
+
+EXPERIMENT RESULTS SUMMARY:
+------------------------------
+
+AGE_ONLY:
+  Features: 1
+  Train AUC: 0.5970
+  Val AUC: 0.6067
+  Overfitting: -0.0097
+
+AGE_SEX:
+  Features: 3
+  Train AUC: 0.6166
+  Val AUC: 0.6175
+  Overfitting: -0.0009
+
+AGE_DEMOGRAPHICS:
+  Features: 10
+  Train AUC: 0.6137
+  Val AUC: 0.6304
+  Overfitting: -0.0167
+
+AGE_PACK_YEARS:
+  Features: 2
+  Train AUC: 0.8059
+  Val AUC: 0.8234
+  Overfitting: -0.0175
+
+AGE_SMOKING_BASIC:
+  Features: 5
+  Train AUC: 0.8038
+  Val AUC: 0.8223
+  Overfitting: -0.0185
+
+AGE_SMOKING_FULL:
+  Features: 6
+  Train AUC: 0.8229
+  Val AUC: 0.8391
+  Overfitting: -0.0162
+
+AGE_FAMILY_HISTORY:
+  Features: 4
+  Train AUC: 0.6029
+  Val AUC: 0.6269
+  Overfitting: -0.0240
+
+AGE_COMORBIDITIES:
+  Features: 4
+  Train AUC: 0.5971
+  Val AUC: 0.6003
+  Overfitting: -0.0032
+
+DEMOGRAPHICS_SMOKING:
+  Features: 15
+  Train AUC: 0.8177
+  Val AUC: 0.8345
+  Overfitting: -0.0168
+
+FULL_MODEL:
+  Features: 30
+  Train AUC: 0.8197
+  Val AUC: 0.8378
+  Overfitting: -0.0181
+
+
+KEY FINDINGS:
+---------------
+1. Best Model: age_smoking_full (Val AUC: 0.8391)
+2. Feature Engineering Impact: +0.231 AUC improvement from age-only to full model
+3. Overfitting Analysis: age_sex shows most overfitting (-0.0009)
+
+4. Design Decisions Analysis:
+   - Optimal learning rate: 0.001 (vs 0.0001 baseline)
+   - Regularization: λ=0 performs best (large dataset effect)
+   - Feature selection: Smoking variables most impactful
+   - Batch size: 128 optimal for this dataset size

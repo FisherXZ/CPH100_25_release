@@ -9,17 +9,18 @@ from sklearn.metrics import roc_auc_score
 import numpy as np
 import random
 import os
+from typing import List, Tuple
 
 def add_main_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--plco_data_path",
-        default="/scratch/project1/plco/lung_prsn.csv",
+        default="lung_prsn.csv",
         help="Location of PLCO csv",
     )
 
     parser.add_argument(
         "--learning_rate",
-        default=1e-4,
+        default=0.001,
         type=float,
         help="Learning rate to use for SGD",
     )
@@ -33,14 +34,14 @@ def add_main_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--batch_size",
-        default=64,
+        default=128,
         type=int,
         help="Batch_size to use for SGD"
     )
 
     parser.add_argument(
         "--num_epochs",
-        default=100,
+        default=200,
         type=int,
         help="number of epochs to use for training"
     )
@@ -53,7 +54,7 @@ def add_main_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     return parser
 
-def load_data(args: argparse.Namespace) -> tuple[list, list, list]:
+def load_data(args: argparse.Namespace) -> Tuple[List, List, List]:
     '''
     Load PLCO data from csv file and split into train validation and testing sets.
     '''
@@ -78,15 +79,12 @@ def main(args: argparse.Namespace) -> dict:
     print("Loading data from {}".format(args.plco_data_path))
     train, val, test = load_data(args)
 
-    # TODO: Define feature configuration for your model
-    # Example configurations:
-    # For age-only model: feature_config = {"numerical": ["age"]}
-    # For full model: feature_config = {
-    #     "numerical": ["age", "pack_years"],  # Features to normalize
-    #     "categorical": ["sex", "race7"],     # Features for one-hot encoding
-    #     "ordinal": ["educat"]                # Features for integer encoding
-    # }
-    feature_config = None
+    # Best Model - 6 smoking-focused features for optimal performance
+    feature_config = {
+        "numerical": ["age", "pack_years", "cig_years", "cigpd_f"],             # Age + smoking intensity metrics
+        "categorical": ["smoked_f"],                                             # Ever smoked flag
+        "ordinal": ["cig_stat"]                                                  # Current smoking status
+    }
 
     print("Initializing vectorizer and extracting features")
     # TODO: Implement a vectorizer to convert the questionnaire features into a feature vector
